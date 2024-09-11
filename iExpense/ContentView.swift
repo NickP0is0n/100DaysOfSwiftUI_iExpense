@@ -10,6 +10,8 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var expenses = Expenses()
     
+    @State private var showingAddExpense = false
+    
     var body: some View {
         NavigationStack {
             List {
@@ -21,11 +23,13 @@ struct ContentView: View {
             .navigationTitle("iExpense")
             .toolbar {
                 Button  {
-                    let expense = ExpenseItem(name: "Test", type: "Personal", amount: 5)
-                    expenses.items.append(expense)
+                    showingAddExpense = true
                 } label: {
                     Label("Add expense", systemImage: "plus")
                 }
+            }
+            .sheet(isPresented: $showingAddExpense) {
+                AddView(expenses: expenses)
             }
         }
     }
