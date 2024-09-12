@@ -67,6 +67,22 @@ struct ContentView: View {
     
     @State private var showingAddExpense = false
     
+    var totalPersonal: Double {
+        var total = 0.0
+        for expense in expenses.items.filter({ $0.type == "Personal" }) {
+            total += expense.amount
+        }
+        return total
+    }
+    
+    var totalBusiness: Double {
+        var total = 0.0
+        for expense in expenses.items.filter({ $0.type == "Business" }) {
+            total += expense.amount
+        }
+        return total
+    }
+    
     var body: some View {
         NavigationStack {
             List {
@@ -97,6 +113,22 @@ struct ContentView: View {
                     }
                     .onDelete { indexSet in
                         removeItems(filterBy: "Business", at: indexSet)
+                    }
+                }
+                
+                Section("Total") {
+                    HStack {
+                        Text("Personal")
+                            .font(.headline)
+                        Spacer()
+                        Text(totalPersonal, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                    }
+                    
+                    HStack {
+                        Text("Business")
+                            .font(.headline)
+                        Spacer()
+                        Text(totalBusiness, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
                     }
                 }
             }
