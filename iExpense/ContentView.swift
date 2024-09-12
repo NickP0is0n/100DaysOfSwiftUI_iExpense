@@ -7,6 +7,61 @@
 
 import SwiftUI
 
+struct SmallExpense: View {
+    let item: ExpenseItem
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(item.name)
+                    .font(.headline.italic())
+                Text(item.type)
+            }
+            
+            Spacer()
+        
+            Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+        }
+    }
+}
+
+struct NormalExpense: View {
+    let item: ExpenseItem
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(item.name)
+                    .font(.headline)
+                Text(item.type)
+            }
+            
+            Spacer()
+        
+            Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+        }
+    }
+}
+
+struct HugeExpense: View {
+    let item: ExpenseItem
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(item.name)
+                    .font(.headline)
+                    .fontWeight(.heavy)
+                Text(item.type)
+            }
+            
+            Spacer()
+        
+            Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+        }
+    }
+}
+
 struct ContentView: View {
     @StateObject private var expenses = Expenses()
     
@@ -15,20 +70,35 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(expenses.items) { item in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(item.name)
-                                .font(.headline)
-                            Text(item.type)
+                Section("Personal expenses") {
+                    ForEach(expenses.items.filter { $0.type == "Personal" }) { item in
+                        if item.amount <= 10 {
+                            SmallExpense(item: item)
+                        } else if item.amount <= 100 {
+                            NormalExpense(item: item)
+                        } else {
+                            HugeExpense(item: item)
                         }
-                        
-                        Spacer()
-                        
-                        Text(item.amount, format: .currency(code: "USD"))
+                    }
+                    .onDelete { indexSet in
+                        removeItems(filterBy: "Personal", at: indexSet)
                     }
                 }
-                .onDelete(perform: removeItems)
+                
+                Section("Business expenses") {
+                    ForEach(expenses.items.filter { $0.type == "Business" }) { item in
+                        if item.amount <= 10 {
+                            SmallExpense(item: item)
+                        } else if item.amount <= 100 {
+                            NormalExpense(item: item)
+                        } else {
+                            HugeExpense(item: item)
+                        }
+                    }
+                    .onDelete { indexSet in
+                        removeItems(filterBy: "Business", at: indexSet)
+                    }
+                }
             }
             .navigationTitle("iExpense")
             .toolbar {
@@ -44,8 +114,13 @@ struct ContentView: View {
         }
     }
     
-    func removeItems(at offsets: IndexSet) {
-        expenses.items.remove(atOffsets: offsets)
+    func removeItems(filterBy: String, at offsets: IndexSet) {
+        let filteredExpenses = expenses.items.filter { $0.type == filterBy }
+        for offset in offsets {
+            expenses.items.removeAll { item in
+                filteredExpenses[offset].id == item.id
+            }
+        }
     }
 }
 
