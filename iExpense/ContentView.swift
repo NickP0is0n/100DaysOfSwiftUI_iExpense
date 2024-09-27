@@ -65,8 +65,6 @@ struct HugeExpense: View {
 struct ContentView: View {
     @StateObject private var expenses = Expenses()
     
-    @State private var showingAddExpense = false
-    
     var totalPersonal: Double {
         var total = 0.0
         for expense in expenses.items.filter({ $0.type == "Personal" }) {
@@ -134,14 +132,12 @@ struct ContentView: View {
             }
             .navigationTitle("iExpense")
             .toolbar {
-                Button  {
-                    showingAddExpense = true
+                NavigationLink  {
+                    AddView(expenses: expenses)
+                        .navigationBarBackButtonHidden()
                 } label: {
                     Label("Add expense", systemImage: "plus")
                 }
-            }
-            .sheet(isPresented: $showingAddExpense) {
-                AddView(expenses: expenses)
             }
         }
     }
