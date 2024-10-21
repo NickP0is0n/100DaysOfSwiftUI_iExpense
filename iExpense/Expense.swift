@@ -5,32 +5,20 @@
 //  Created by Mykola Chaikovskyi on 12.09.2024.
 //
 
+import SwiftData
 import SwiftUI
 
-struct ExpenseItem: Identifiable, Codable {
-    var id = UUID()
-    let name: String
-    let type: String
-    let amount: Double
-}
-
-class Expenses: ObservableObject {
-    @Published var items = [ExpenseItem]() {
-        didSet {
-            if let encoded = try? JSONEncoder().encode(items) {
-                UserDefaults.standard.set(encoded, forKey: "Items")
-            }
-        }
-    }
+@Model
+class Expense {
+    var id: UUID
+    var name: String
+    var type: String
+    var amount: Double
     
-    init() {
-        if let savedItems = UserDefaults.standard.data(forKey: "Items") {
-            if let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
-                items = decodedItems
-                return
-            }
-        }
-        
-        items = []
+    init(id: UUID = UUID(), name: String, type: String, amount: Double) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.amount = amount
     }
 }

@@ -5,10 +5,11 @@
 //  Created by Mykola Chaikovskyi on 10.09.2024.
 //
 
+import SwiftData
 import SwiftUI
 
 struct SmallExpense: View {
-    let item: ExpenseItem
+    let item: Expense
     
     var body: some View {
         HStack {
@@ -26,7 +27,7 @@ struct SmallExpense: View {
 }
 
 struct NormalExpense: View {
-    let item: ExpenseItem
+    let item: Expense
     
     var body: some View {
         HStack {
@@ -44,7 +45,7 @@ struct NormalExpense: View {
 }
 
 struct HugeExpense: View {
-    let item: ExpenseItem
+    let item: Expense
     
     var body: some View {
         HStack {
@@ -63,11 +64,12 @@ struct HugeExpense: View {
 }
 
 struct ContentView: View {
-    @StateObject private var expenses = Expenses()
+    @Environment(\.modelContext) var modelContext
+    @Query private var expenses: [Expense]
     
     var totalPersonal: Double {
         var total = 0.0
-        for expense in expenses.items.filter({ $0.type == "Personal" }) {
+        for expense in expenses.filter({ $0.type == "Personal" }) {
             total += expense.amount
         }
         return total
@@ -75,7 +77,7 @@ struct ContentView: View {
     
     var totalBusiness: Double {
         var total = 0.0
-        for expense in expenses.items.filter({ $0.type == "Business" }) {
+        for expense in expenses.filter({ $0.type == "Business" }) {
             total += expense.amount
         }
         return total
@@ -85,7 +87,7 @@ struct ContentView: View {
         NavigationStack {
             List {
                 Section("Personal expenses") {
-                    ForEach(expenses.items.filter { $0.type == "Personal" }) { item in
+                    ForEach(expenses.filter { $0.type == "Personal" }) { item in
                         if item.amount <= 10 {
                             SmallExpense(item: item)
                         } else if item.amount <= 100 {
@@ -100,7 +102,7 @@ struct ContentView: View {
                 }
                 
                 Section("Business expenses") {
-                    ForEach(expenses.items.filter { $0.type == "Business" }) { item in
+                    ForEach(expenses.filter { $0.type == "Business" }) { item in
                         if item.amount <= 10 {
                             SmallExpense(item: item)
                         } else if item.amount <= 100 {
@@ -133,7 +135,7 @@ struct ContentView: View {
             .navigationTitle("iExpense")
             .toolbar {
                 NavigationLink  {
-                    AddView(expenses: expenses)
+                    AddView()
                         .navigationBarBackButtonHidden()
                 } label: {
                     Label("Add expense", systemImage: "plus")
@@ -143,17 +145,22 @@ struct ContentView: View {
     }
     
     func removeItems(filterBy: String, at offsets: IndexSet) {
-        let filteredExpenses = expenses.items.filter { $0.type == filterBy }
+        let filteredExpenses = expenses.filter { $0.type == filterBy }
+        
         for offset in offsets {
-            expenses.items.removeAll { item in
-                filteredExpenses[offset].id == item.id
-            }
+            let expenseToRemove = filteredExpenses[offset]
+            modelContext.delete(expenseToRemove)
         }
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
+#Preview {
+    do {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: Expense.self, configurations: config)
+        return ContentView()
+            .modelContainer(container)
+    } catch {
+        return Text("Cannot create model container for Expense.")
     }
 }
