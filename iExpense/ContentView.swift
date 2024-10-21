@@ -63,80 +63,21 @@ struct HugeExpense: View {
     }
 }
 
+enum FilterType {
+    case all, personal, business
+}
+
 struct ContentView: View {
-    @Environment(\.modelContext) var modelContext
-    @Query private var expenses: [Expense]
-    
     @State private var sortOrder = [
         SortDescriptor(\Expense.name),
         SortDescriptor(\Expense.amount)
     ]
     
-    var totalPersonal: Double {
-        var total = 0.0
-        for expense in expenses.filter({ $0.type == "Personal" }) {
-            total += expense.amount
-        }
-        return total
-    }
-    
-    var totalBusiness: Double {
-        var total = 0.0
-        for expense in expenses.filter({ $0.type == "Business" }) {
-            total += expense.amount
-        }
-        return total
-    }
+    @State private var currentFilterType = FilterType.all
     
     var body: some View {
         NavigationStack {
-            List {
-                Section("Personal expenses") {
-                    ForEach(expenses.filter { $0.type == "Personal" }) { item in
-                        if item.amount <= 10 {
-                            SmallExpense(item: item)
-                        } else if item.amount <= 100 {
-                            NormalExpense(item: item)
-                        } else {
-                            HugeExpense(item: item)
-                        }
-                    }
-                    .onDelete { indexSet in
-                        removeItems(filterBy: "Personal", at: indexSet)
-                    }
-                }
-                
-                Section("Business expenses") {
-                    ForEach(expenses.filter { $0.type == "Business" }) { item in
-                        if item.amount <= 10 {
-                            SmallExpense(item: item)
-                        } else if item.amount <= 100 {
-                            NormalExpense(item: item)
-                        } else {
-                            HugeExpense(item: item)
-                        }
-                    }
-                    .onDelete { indexSet in
-                        removeItems(filterBy: "Business", at: indexSet)
-                    }
-                }
-                
-                Section("Total") {
-                    HStack {
-                        Text("Personal")
-                            .font(.headline)
-                        Spacer()
-                        Text(totalPersonal, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                    }
-                    
-                    HStack {
-                        Text("Business")
-                            .font(.headline)
-                        Spacer()
-                        Text(totalBusiness, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                    }
-                }
-            }
+            ExpenseListView(filter: currentFilterType, sort: sortOrder)
             .navigationTitle("iExpense")
             .toolbar {
                 Menu("Sort", systemImage: "arrow.up.arrow.down") {
@@ -153,6 +94,18 @@ struct ContentView: View {
                                 ])
                     }
                 }
+                
+                Menu("Filter", systemImage: "eye") {
+                    Picker("Sort", selection: $currentFilterType) {
+                        Text("All expenses")
+                            .tag(FilterType.all)
+                        Text("Personal expenses")
+                            .tag(FilterType.personal)
+                        Text("Business expenses")
+                            .tag(FilterType.business)
+                    }
+                }
+                
                 NavigationLink  {
                     AddView()
                         .navigationBarBackButtonHidden()
@@ -162,28 +115,8 @@ struct ContentView: View {
             }
         }
     }
-    
-    init() {
-        _expenses = Query(sort: sortOrder)
-    }
-    
-    func removeItems(filterBy: String, at offsets: IndexSet) {
-        let filteredExpenses = expenses.filter { $0.type == filterBy }
-        
-        for offset in offsets {
-            let expenseToRemove = filteredExpenses[offset]
-            modelContext.delete(expenseToRemove)
-        }
-    }
 }
 
 #Preview {
-    do {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: Expense.self, configurations: config)
-        return ContentView()
-            .modelContainer(container)
-    } catch {
-        return Text("Cannot create model container for Expense.")
-    }
+    ContentView()
 }
