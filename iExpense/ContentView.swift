@@ -67,6 +67,11 @@ struct ContentView: View {
     @Environment(\.modelContext) var modelContext
     @Query private var expenses: [Expense]
     
+    @State private var sortOrder = [
+        SortDescriptor(\Expense.name),
+        SortDescriptor(\Expense.amount)
+    ]
+    
     var totalPersonal: Double {
         var total = 0.0
         for expense in expenses.filter({ $0.type == "Personal" }) {
@@ -134,6 +139,20 @@ struct ContentView: View {
             }
             .navigationTitle("iExpense")
             .toolbar {
+                Menu("Sort", systemImage: "arrow.up.arrow.down") {
+                    Picker("Sort", selection: $sortOrder) {
+                        Text("Sort by name")
+                            .tag([
+                                    SortDescriptor(\Expense.name),
+                                    SortDescriptor(\Expense.amount)
+                                ])
+                        Text("Sort by amount")
+                            .tag([
+                                    SortDescriptor(\Expense.amount),
+                                    SortDescriptor(\Expense.name)
+                                ])
+                    }
+                }
                 NavigationLink  {
                     AddView()
                         .navigationBarBackButtonHidden()
@@ -142,6 +161,10 @@ struct ContentView: View {
                 }
             }
         }
+    }
+    
+    init() {
+        _expenses = Query(sort: sortOrder)
     }
     
     func removeItems(filterBy: String, at offsets: IndexSet) {
